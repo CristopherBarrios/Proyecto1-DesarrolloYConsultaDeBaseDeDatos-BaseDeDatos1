@@ -221,113 +221,21 @@ CREATE TABLE team (
     team_long_name VARCHAR(50),
     team_short_name VARCHAR(50)
 );
+
 ---------------------------------------------------------
------------------------CONSULTAS-------------------------
+-----------------------NUEVAS-TABLAS---------------------
 ---------------------------------------------------------
 
---Etapa 2
---En la etapa 2 usted ejecutará algunos queries que le permitan familiarizarse con el modelo de
---datos presentado.
---Para esto deberá obtener lo siguiente:
---Según estadísticas:
-
---1.  La cantidad de juegos jugados en cada temporada por cada equipo, de cada liga 
---(tome en cuenta que cada equipo puede jugar como visitante o como anfitrión.
-
-SELECT name as liga, season, team_long_name, COUNT(*) as cantidad_juegos
-FROM (
-  SELECT league_id, season, home_team_api_id
-  FROM match
-  UNION ALL
-  SELECT league_id, season, away_team_api_id
-  FROM match) as equipo_partido
-inner join team
-on equipo_partido.home_team_api_id = team.team_api_id
-inner join league
-on equipo_partido.league_id = league.id 
-GROUP BY name, season, team_long_name;
-
---2. ¿Quién es el mejor equipo de todas las ligas y de todas las temporadas según las
---estadísticas?
-
---Hint: Obtenga la cantidad de goles a favor, goles en contra y la diferencia entre las dos
---anteriores, esto por cada temporada y por cada equipo de cada liga.
-SELECT name as liga, season, equipo, SUM(goles_favor) AS goles_favor, SUM(goles_contra) AS goles_contra, SUM(goles_favor) - SUM(goles_contra) AS diferencia
-FROM (
-  SELECT league_id, season, home_team_api_id AS equipo, home_team_goal AS goles_favor, away_team_goal AS goles_contra
-  FROM match
-  UNION ALL
-  SELECT league_id, season, away_team_api_id AS equipo, away_team_goal AS goles_favor, home_team_goal AS goles_contra
-  FROM match
-) as equipo_partido
-inner join team
-on equipo_partido.equipo = team.team_api_id
-inner join league
-on equipo_partido.league_id = league.id 
-GROUP BY liga, season, equipo
-ORDER BY diferencia DESC
-LIMIT 1;
-
---Utilizando este mismo query, obtenga el ranking de los equipos por temporada y por
---liga, ordenados por ese ranking de manera descendente por diferencia (utilice la función
---Rank () over patition), para obtener el equipo ganador (la respuesta es obvia).
-
-SELECT name as liga, season, equipo, SUM(goles_favor) AS goles_favor, SUM(goles_contra) AS goles_contra, SUM(goles_favor) - SUM(goles_contra) AS diferencia, RANK() OVER (PARTITION BY name, season ORDER BY SUM(goles_favor) - SUM(goles_contra) DESC) AS ranking
-FROM (
-  SELECT league_id, season, home_team_api_id AS equipo, home_team_goal AS goles_favor, away_team_goal AS goles_contra
-  FROM match
-  UNION ALL
-  SELECT league_id, season, away_team_api_id AS equipo, away_team_goal AS goles_favor, home_team_goal AS goles_contra
-  FROM match
-) as equipo_partido
-inner join team
-on equipo_partido.equipo = team.team_api_id
-inner join league
-on equipo_partido.league_id = league.id 
-GROUP BY liga, season, equipo
-ORDER BY liga, season, ranking;
-
---Según apuestas:
---3.  Realice un promedio de las probabilidades de todas las casas de apuesta por temporada,
---liga y equipo (elimine aquellos equipos que no tienen estadísticas en ninguna casa de
---apuesta (casas de apuesta como B36, IW, LB, PSH, etc).
-SELECT 
-       match.season, league.name, team.team_long_name, 
-	   AVG(B365H) AS avg_B365H, AVG(B365D) AS avg_B365D, AVG(B365A) AS avg_B365A,
-       AVG(BWH) AS avg_BWH, AVG(BWD) AS avg_BWD, AVG(BWA) AS avg_BWA,
-       AVG(IWH) AS avg_IWH, AVG(IWD) AS avg_IWD, AVG(IWA) AS avg_IWA,
-       AVG(LBH) AS avg_LBH, AVG(LBD) AS avg_LBD, AVG(LBA) AS avg_LBA,
-       AVG(PSH) AS avg_PSH, AVG(PSD) AS avg_PSD, AVG(PSA) AS avg_PSA,
-       AVG(WHH) AS avg_WHH, AVG(WHD) AS avg_WHD, AVG(WHA) AS avg_WHA,
-       AVG(SJH) AS avg_SJH, AVG(SJD) AS avg_SJD, AVG(SJA) AS avg_SJA,
-       AVG(VCH) AS avg_VCH, AVG(VCD) AS avg_VCD, AVG(VCA) AS avg_VCA,
-       AVG(GBH) AS avg_GBH, AVG(GBD) AS avg_GBD, AVG(GBA) AS avg_GBA,
-       AVG(BSH) AS avg_BSH, AVG(BSD) AS avg_BSD, AVG(BSA) AS avg_BSA
-FROM match
-JOIN league ON match.league_id = league.id
-JOIN team ON match.home_team_api_id = team.team_api_id
-LEFT JOIN (
-    SELECT DISTINCT home_team_api_id
-    FROM match
-    WHERE B365H IS NOT NULL
-    UNION
-    SELECT DISTINCT away_team_api_id
-    FROM match
-    WHERE B365H IS NOT NULL
-) AS teams_with_odds ON team.team_api_id = teams_with_odds.home_team_api_id
-WHERE teams_with_odds.home_team_api_id IS NOT NULL
-GROUP BY match.season, league.name, team.team_long_name
-ORDER BY match.season, league.name, team.team_long_name;
-
---4. ¿Quién es el mejor equipo de todas las ligas y de todas las temporadas según las
---apuestas? Observe la información dada en la siguientes páginas para poder interpretar las
---cuotas promedio para obtener las probabilidades:
---● https://www.apuestas-deportivas.es/calculadora-probabilidades-apuestas-deportivas
---/
---● https://www.pasionamarilla.com/ud-laspalmas-noticias/como-se-calculan-las-probabi
---lidades-en-las-apuestas-deportivas/
---Hint: Obtenga el promedio de todas las casas de apuesta por partido, y luego obtenga el
---promedio de estas por temporada, liga y equipo.
-
---Etapa 3
-
+CREATE TABLE foulcommit (
+    id INT, 
+    foulscommitted INT, 
+    event_incident_typefk INT, 
+    elapsed INT,
+    player2 INT, 
+    subtype TEXT, 
+    player1 INT, 
+    sortorder INT, 
+    team INT,
+    n INT, 
+    type TEXT
+);
